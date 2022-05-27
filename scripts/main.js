@@ -384,7 +384,7 @@ function StartTurn(param) {
         //Test1();
         let botPlayerHerosFullMana = botPlayer.allHeroFullMana();
         if (botPlayerHerosFullMana != null) {
-            HandleCastSkill(botPlayerHerosFullMana);
+            handleCastSkill(botPlayerHerosFullMana);
         } else {
             let recommendSwapGemIndex = handleSwapGems();
             SendSwapGem(recommendSwapGemIndex);
@@ -526,7 +526,7 @@ function SelectGem() {
     return gemSelect;
 }
 
-function HandleCastSkill(botPlayerHerosFullMana) {
+function handleCastSkill(botPlayerHerosFullMana) {
     let firstHeroAlive_enemyPlayer = enemyPlayer.firstHeroAlive();
     let firstHeroAlive_botPlayer = botPlayer.firstHeroAlive();
 
@@ -582,6 +582,18 @@ function HandleCastSkill(botPlayerHerosFullMana) {
             } 
             else {
                 if (enemyHerosAlive && enemyHerosAlive.length > 0) {
+                    let hasEnemyCERBERUS = enemyHerosAlive.find(x => x.id == 'CERBERUS');
+                    if (hasEnemyCERBERUS) {
+                        target.targetId = hasEnemyCERBERUS.id.toString();
+                        SendCastSkill(fireSpirit, target);
+                        return;
+                    }
+                    let hasEnemySEA_GOD = enemyHerosAlive.find(x => x.id == 'SEA_GOD');
+                    if (hasEnemySEA_GOD) {
+                        target.targetId = hasEnemySEA_GOD.id.toString();
+                        SendCastSkill(fireSpirit, target);
+                        return;
+                    }
                     let enemyHeroId = getEnemyHeroHasAttackMax(enemyHerosAlive, enemyHerosAlive.length);
                     target.targetId = enemyHeroId.toString();
                     SendCastSkill(fireSpirit, target);
@@ -617,7 +629,7 @@ function HandleCastSkill(botPlayerHerosFullMana) {
                     SendCastSkill(airSpirit, target);
                     return;
                 }
-                if (listChoiceAir && listChoiceAir.length > 0 && indexCastSkill.quantity < listChoiceAir[0].quantity) {
+                if (listChoiceAir && listChoiceAir.length > 0 && listChoiceFire[0].quantity < listChoiceAir[0].quantity) {
                     target.gemIndex = listChoiceAir[0].index.toString();
                     target.isTargetAllyOrNot = true;
                     SendCastSkill(airSpirit, target);
@@ -632,7 +644,7 @@ function HandleCastSkill(botPlayerHerosFullMana) {
                 return;
             }
         }
-        if (seaSpirit) {
+        else {
             let swords = handleCastSkillAirSpirit([GemType.SWORD]);
             if (swords && swords.length > 0) {
                 if (swords[0].quantity > 3 || (swords[0].quantity > 2 && firstHeroAlive_botPlayer.attack >= firstHeroAlive_enemyPlayer.hp)) {
@@ -652,7 +664,7 @@ function HandleCastSkill(botPlayerHerosFullMana) {
                     SendCastSkill(airSpirit, target);
                     return;
                 }
-                if (listChoiceAir && listChoiceAir.length > 0 && indexCastSkill.quantity < listChoiceAir[0].quantity) {
+                if (listChoiceAir && listChoiceAir.length > 0 && listChoiceFire[0].quantity < listChoiceAir[0].quantity) {
                     target.gemIndex = listChoiceAir[0].index.toString();
                     target.isTargetAllyOrNot = true;
                     SendCastSkill(airSpirit, target);
@@ -703,24 +715,21 @@ function handleSwapGems() {
 
     let firstHeroAlive_botPlayer = botPlayer.firstHeroAlive();
     let firstHeroAlive_enemyPlayer = enemyPlayer.firstHeroAlive();
-
-    let listGemModifierPriority = [
-        GemModifier.EXTRA_TURN,
-        GemModifier.EXPLODE_VERTICAL,
-        GemModifier.EXPLODE_HORIZONTAL,
-        GemModifier.EXPLODE_SQUARE,
-        GemModifier.BUFF_ATTACK,
-        GemModifier.HIT_POINT,
-        GemModifier.MANA
-    ];
-
+    let listGemModifierPriority = [];
+    listGemModifierPriority.push(GemModifier.EXTRA_TURN);
+    listGemModifierPriority.push(GemModifier.EXPLODE_VERTICAL);
+    listGemModifierPriority.push(GemModifier.EXPLODE_HORIZONTAL);
+    listGemModifierPriority.push(GemModifier.EXPLODE_SQUARE);
+    listGemModifierPriority.push(GemModifier.BUFF_ATTACK);
+    listGemModifierPriority.push(GemModifier.HIT_POINT);
+    listGemModifierPriority.push(GemModifier.MANA);
     let listGemTypePriority = checkGemTypeBotPlayerAlive();
     console.log("listGemTypePriority: ", listGemTypePriority);
     //xanh duong, xanh la, vang, tim, do
     if (checkListEnemyHeroHasOneshot()) {
         listGemTypePriority.unshift(GemType.RED);
     }
-
+    
     let matchGemSwordThanFour = listMatchGem.find(x => x.type == GemType.SWORD && x.sizeMatch > 4);
     if (matchGemSwordThanFour) {
         return matchGemSwordThanFour.getIndexSwapGem();
