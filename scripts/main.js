@@ -35,7 +35,7 @@ var enemyPlayer;
 var currentPlayerId;
 var grid;
 
-const username = "amen";
+const username = "54321";
 const token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGkubGVraW0iLCJhdXRoIjoiUk9MRV9VU0VSIiwiTEFTVF9MT0dJTl9USU1FIjoxNjUzNjQ5NTcwMjYwLCJleHAiOjE2NTU0NDk1NzB9.zLNolld4z_vcitnWhr4_AOdt6nBJq37zSqYJaIF35nNKqYKzyEcdBt8u6w8yjuiLNyksvJpF2xOP_70cwulM2w";
 var visualizer = new Visualizer({ el: '#visual' });
 var params = window.params;
@@ -381,11 +381,12 @@ function StartTurn(param) {
             strategy.playTurn();
             return;
         }
+        //Test1();
         let botPlayerHerosFullMana = botPlayer.allHeroFullMana();
         if (botPlayerHerosFullMana != null) {
             HandleCastSkill(botPlayerHerosFullMana);
         } else {
-            let recommendSwapGemIndex = HandleSwapGems();
+            let recommendSwapGemIndex = handleSwapGems();
             SendSwapGem(recommendSwapGemIndex);
         }
 
@@ -422,7 +423,7 @@ function SendCastSkill(heroCastSkill, {
     if (gemIndex) {
         data.putUtfString("gemIndex", gemIndex);
     } 
-    else
+    else 
     {
         data.putUtfString("gemIndex", GetRandomInt(64).toString());
     }
@@ -540,15 +541,15 @@ function HandleCastSkill(botPlayerHerosFullMana) {
         isTargetAllyOrNot: null
     };
     if (seaSpirit && seaSpirit.isFullMana()) {
-        if (airSpirit && airSpirit.attack >= AIR_SPIRIT_MAXATTACK && !BotHeroCanBeKilled(seaSpirit)) {
-            let recommendSwapGemIndex = HandleSwapGems();
+        if (airSpirit && airSpirit.attack >= AIR_SPIRIT_MAXATTACK && !botHeroCanBeKilled(seaSpirit)) {
+            let recommendSwapGemIndex = handleSwapGems();
             SendSwapGem(recommendSwapGemIndex);
-        } else {
-            if (airSpirit)
-                target.targetId = airSpirit.id.toString();
-            else
-                target.targetId = seaSpirit.id.toString();
+            return;
         }
+        if (airSpirit)
+            target.targetId = airSpirit.id.toString();
+        else
+            target.targetId = seaSpirit.id.toString();
         SendCastSkill(seaSpirit, target);
         return;
     } else if (fireSpirit && fireSpirit.isFullMana()) {
@@ -563,7 +564,7 @@ function HandleCastSkill(botPlayerHerosFullMana) {
             }
         }
         if (enemyHeroCanBeKilledAndIsFullManas.length > 0) {
-            let enemyHeroId = GetEnemyHeroHasAttackMax(enemyHeroCanBeKilledAndIsFullManas, enemyHeroCanBeKilledAndIsFullManas.length);
+            let enemyHeroId = getEnemyHeroHasAttackMax(enemyHeroCanBeKilledAndIsFullManas, enemyHeroCanBeKilledAndIsFullManas.length);
             target.targetId = enemyHeroId.toString();
             SendCastSkill(fireSpirit, target);
             return;
@@ -574,13 +575,14 @@ function HandleCastSkill(botPlayerHerosFullMana) {
                     enemyHeroCanBeKilleds.push(enemyHerosAlive[i]);
             }
             if (enemyHeroCanBeKilleds.length > 0) {
-                let enemyHeroId = GetEnemyHeroHasAttackMax(enemyHeroCanBeKilleds, enemyHeroCanBeKilleds.length);
+                let enemyHeroId = getEnemyHeroHasAttackMax(enemyHeroCanBeKilleds, enemyHeroCanBeKilleds.length);
                 target.targetId = enemyHeroId.toString();
                 SendCastSkill(fireSpirit, target);
                 return;
-            } else {
+            } 
+            else {
                 if (enemyHerosAlive && enemyHerosAlive.length > 0) {
-                    let enemyHeroId = GetEnemyHeroHasAttackMax(enemyHerosAlive, enemyHerosAlive.length);
+                    let enemyHeroId = getEnemyHeroHasAttackMax(enemyHerosAlive, enemyHerosAlive.length);
                     target.targetId = enemyHeroId.toString();
                     SendCastSkill(fireSpirit, target);
                     return;
@@ -589,30 +591,94 @@ function HandleCastSkill(botPlayerHerosFullMana) {
         }
     }
     if (airSpirit && airSpirit.isFullMana()) {
-        let swords = HandleCastSkillAirSpirit([GemType.SWORD]);
-        if (swords) {
-            if (swords[0].quantity > 3 || (swords[0].quantity > 2 && firstHeroAlive_botPlayer.attack >= firstHeroAlive_enemyPlayer.hp)) {
-                target.gemIndex = swords[0].index.toString();
-                target.isTargetAllyOrNot = true;
+        if (!seaSpirit) {
+            let swords = handleCastSkillAirSpirit([GemType.SWORD]);
+            if (swords && swords.length > 0) {
+                if (swords[0].quantity > 3) {
+                    target.gemIndex = swords[0].index.toString();
+                    target.isTargetAllyOrNot = true;
+                    SendCastSkill(airSpirit, target);
+                    return;
+                }
+                if (swords[0].quantity > 2) {
+                    target.gemIndex = swords[0].index.toString();
+                    target.isTargetAllyOrNot = true;
+                    SendCastSkill(airSpirit, target);
+                    return;
+                }
+            }
+            if (fireSpirit) {
+                let listChoiceFire = handleCastSkillAirSpirit([GemType.PURPLE, GemType.RED]);
+                let listChoiceAir = handleCastSkillAirSpirit([GemType.BLUE, GemType.GREEN]);
+                let indexCastSkill = listChoiceFire.find(x => x.quantity >= fireSpirit.getMaxManaCouldTake());
+                if (indexCastSkill) {
+                    target.gemIndex = indexCastSkill.index.toString();
+                    target.isTargetAllyOrNot = true;
+                    SendCastSkill(airSpirit, target);
+                    return;
+                }
+                if (listChoiceAir && listChoiceAir.length > 0 && indexCastSkill.quantity < listChoiceAir[0].quantity) {
+                    target.gemIndex = listChoiceAir[0].index.toString();
+                    target.isTargetAllyOrNot = true;
+                    SendCastSkill(airSpirit, target);
+                    return;
+                }
+                let listChoiceAll = handleCastSkillAirSpirit([GemType.PURPLE, GemType.RED, GemType.BLUE, GemType.GREEN]);
+                if (listChoiceAll && listChoiceAll.length > 0) {
+                    target.gemIndex = listChoiceAll[0].index.toString();
+                    target.isTargetAllyOrNot = true;
+                }
                 SendCastSkill(airSpirit, target);
                 return;
             }
         }
-        let gemTypesRecommend = GetListGemsPriority(airSpirit, true);
-        if (gemTypesRecommend && gemTypesRecommend.length > 0) {
-            let listChoice = HandleCastSkillAirSpirit(gemTypesRecommend)
-            if (listChoice) {
-                target.gemIndex = listChoice[0].index.toString();
-                target.isTargetAllyOrNot = true;
+        if (seaSpirit) {
+            let swords = handleCastSkillAirSpirit([GemType.SWORD]);
+            if (swords && swords.length > 0) {
+                if (swords[0].quantity > 3 || (swords[0].quantity > 2 && firstHeroAlive_botPlayer.attack >= firstHeroAlive_enemyPlayer.hp)) {
+                    target.gemIndex = swords[0].index.toString();
+                    target.isTargetAllyOrNot = true;
+                    SendCastSkill(airSpirit, target);
+                    return;
+                }
+            }
+            if (fireSpirit) {
+                let listChoiceFire = handleCastSkillAirSpirit([GemType.RED, GemType.PURPLE]);
+                let listChoiceAir = handleCastSkillAirSpirit([GemType.BLUE, GemType.GREEN]);
+                let indexCastSkill = listChoiceFire.find(x => x.quantity >= fireSpirit.getMaxManaCouldTake());
+                if (indexCastSkill) {
+                    target.gemIndex = indexCastSkill.index.toString();
+                    target.isTargetAllyOrNot = true;
+                    SendCastSkill(airSpirit, target);
+                    return;
+                }
+                if (listChoiceAir && listChoiceAir.length > 0 && indexCastSkill.quantity < listChoiceAir[0].quantity) {
+                    target.gemIndex = listChoiceAir[0].index.toString();
+                    target.isTargetAllyOrNot = true;
+                    SendCastSkill(airSpirit, target);
+                    return;
+                }
+                let listChoiceAll = handleCastSkillAirSpirit([GemType.RED, GemType.PURPLE, GemType.BLUE]);
+                if (listChoiceAll && listChoiceAll.length > 0) {
+                    target.gemIndex = listChoiceAll[0].index.toString();
+                    target.isTargetAllyOrNot = true;
+                }
                 SendCastSkill(airSpirit, target);
                 return;
             }
+        }
+        let listChoiceAir = handleCastSkillAirSpirit([GemType.BLUE, GemType.GREEN])
+        if (listChoiceAir && listChoiceAir.length > 0) {
+            target.gemIndex = listChoiceAir[0].index.toString();
+            target.isTargetAllyOrNot = true;
+            SendCastSkill(airSpirit, target);
+            return;
         }
     }
     SendCastSkill(botPlayerHerosFullMana[0]);
 }
 
-function GetEnemyHeroHasAttackMax(enemyHeros, n) {
+function getEnemyHeroHasAttackMax(enemyHeros, n) {
     let maxDame = enemyHeros[0].attack;
     let enemyHeroId = enemyHeros[0].id;
     for (let i = 1; i < n; i++)
@@ -625,7 +691,7 @@ function GetEnemyHeroHasAttackMax(enemyHeros, n) {
 
 //Handle Swap Gems 
 
-function HandleSwapGems() {
+function handleSwapGems() {
     let listMatchGem = grid.suggestMatch();
     if (listMatchGem.length === 0) {
         return [-1, -1];
@@ -649,6 +715,7 @@ function HandleSwapGems() {
     ];
 
     let listGemTypePriority = checkGemTypeBotPlayerAlive();
+    console.log("listGemTypePriority: ", listGemTypePriority);
     //xanh duong, xanh la, vang, tim, do
     if (checkListEnemyHeroHasOneshot()) {
         listGemTypePriority.unshift(GemType.RED);
@@ -690,34 +757,49 @@ function HandleSwapGems() {
             return matchGemSwordThanTwo.getIndexSwapGem();
     }
     if (airSpirit && airSpirit.getMaxManaCouldTake() <= 4) {
+        let airFullManaGemHasGemModify = listMatchGem.find(x => x.sizeMatch > 3 && (x.type == GemType.BLUE || x.type == GemType.GREEN) && listGemModifierPriority.includes(x.modifier));
+        if (airFullManaGemHasGemModify)
+            return airFullManaGemHasGemModify.getIndexSwapGem();
         let airFullManaGem = listMatchGem.find(x => x.sizeMatch > 3 && (x.type == GemType.BLUE || x.type == GemType.GREEN));
-        if (airFullManaGem) {
+        if (airFullManaGem)
             return airFullManaGem.getIndexSwapGem();
-        }
     }
     if (seaSpirit && seaSpirit.getMaxManaCouldTake() <= 4) {
+        let seaFullManaGemHasGemModify = listMatchGem.find(x => x.sizeMatch > 3 && (x.type == GemType.YELLOW || x.type == GemType.GREEN) && listGemModifierPriority.includes(x.modifier));
+        if (seaFullManaGemHasGemModify)
+            return seaFullManaGemHasGemModify.getIndexSwapGem();
         let seaFullManaGem = listMatchGem.find(x => x.sizeMatch > 3 && (x.type == GemType.YELLOW || x.type == GemType.GREEN));
-        if (seaFullManaGem) {
+        if (seaFullManaGem)
             return seaFullManaGem.getIndexSwapGem();
-        }
     }
     if (fireSpirit && fireSpirit.getMaxManaCouldTake() <= 4) {
+        let fireFullManaGemHasGemModify = listMatchGem.find(x => x.sizeMatch > 3 && (x.type == GemType.PURPLE || x.type == GemType.RED) && listGemModifierPriority.includes(x.modifier));
+        if (fireFullManaGemHasGemModify)
+            return fireFullManaGemHasGemModify.getIndexSwapGem();
         let fireFullManaGem = listMatchGem.find(x => x.sizeMatch > 3 && (x.type == GemType.PURPLE || x.type == GemType.RED));
-        if (fireFullManaGem) {
+        if (fireFullManaGem)
             return fireFullManaGem.getIndexSwapGem();
-        }
     }
     if (airSpirit && airSpirit.getMaxManaCouldTake() <= 3) {
+        let airFullManaGemHasGemModify = listMatchGem.find(x => x.sizeMatch > 2 && (x.type == GemType.BLUE || x.type == GemType.GREEN) && listGemModifierPriority.includes(x.modifier));
+        if (airFullManaGemHasGemModify)
+            return airFullManaGemHasGemModify.getIndexSwapGem();
         let airFullManaGem = listMatchGem.find(x => x.sizeMatch > 2 && (x.type == GemType.BLUE || x.type == GemType.GREEN));
         if (airFullManaGem)
             return airFullManaGem.getIndexSwapGem();
     }
     if (seaSpirit && seaSpirit.getMaxManaCouldTake() <= 3) {
+        let seaFullManaGemHasGemModify = listMatchGem.find(x => x.sizeMatch > 2 && (x.type == GemType.YELLOW || x.type == GemType.GREEN) && listGemModifierPriority.includes(x.modifier));
+        if (seaFullManaGemHasGemModify)
+            return seaFullManaGemHasGemModify.getIndexSwapGem();
         let seaFullManaGem = listMatchGem.find(x => x.sizeMatch > 2 && (x.type == GemType.YELLOW || x.type == GemType.GREEN));
         if (seaFullManaGem)
             return seaFullManaGem.getIndexSwapGem();
     }
     if (fireSpirit && fireSpirit.getMaxManaCouldTake() <= 3) {
+        let fireFullManaGemHasGemModify = listMatchGem.find(x => x.sizeMatch > 2 && (x.type == GemType.PURPLE || x.type == GemType.RED) && listGemModifierPriority.includes(x.modifier));
+        if (fireFullManaGemHasGemModify)
+            return fireFullManaGemHasGemModify.getIndexSwapGem();
         let fireFullManaGem = listMatchGem.find(x => x.sizeMatch > 2 && (x.type == GemType.PURPLE || x.type == GemType.RED));
         if (fireFullManaGem)
             return fireFullManaGem.getIndexSwapGem();
@@ -817,11 +899,10 @@ function checkGemTypeBotPlayerAlive() {
     return checkListGemTypePriority
 }
 
-function GetListGemsPriority(priorityHero, isCheckFullMana = false) {
+function getListGemsPriority(priorityHero, isCheckFullMana = false) {
     let heroesAlive = botPlayer.getHerosAlive();
-    if (isCheckFullMana) {
+    if (isCheckFullMana)
         heroesAlive = botPlayer.getHerosAliveAndUnFullMana();
-    }
     let listGemsPriority = [];
     if (heroesAlive && heroesAlive.length > 0) {
         heroesAlive.forEach(element => {
@@ -838,7 +919,7 @@ function GetListGemsPriority(priorityHero, isCheckFullMana = false) {
     });
 }
 
-function GetIndexSwapGemByGemTypeAndSizeMatch(gemTypes, sizeMatch = null) {
+function getIndexSwapGemByGemTypeAndSizeMatch(gemTypes, sizeMatch = null) {
     let listMatchGem = grid.suggestMatch();
     gemTypes.forEach(element => {
         if (sizeMatch) {
@@ -857,12 +938,12 @@ function GetIndexSwapGemByGemTypeAndSizeMatch(gemTypes, sizeMatch = null) {
     return null;
 }
 
-function BotHeroCanBeKilled(hero) {
+function botHeroCanBeKilled(hero) {
     let enemyHeroFullMana = enemyPlayer.anyHeroFullMana();
     let firstHeroAlive_enemyPlayer = enemyPlayer.firstHeroAlive();
     if (enemyHeroFullMana)
         return true;
-    if (firstHeroAlive_enemyPlayer.attack >= hero.hp && GetIndexSwapGemByGemTypeAndSizeMatch([GemType.SWORD]))
+    if (firstHeroAlive_enemyPlayer.attack >= hero.hp && getIndexSwapGemByGemTypeAndSizeMatch([GemType.SWORD]))
         return true;
     return false;
 }
@@ -879,16 +960,15 @@ function checkListEnemyHeroHasOneshot() {
     return false;
 }
 
-function HandleCastSkillAirSpirit(gemTypes) {
+function handleCastSkillAirSpirit(gemTypes) {
     let boardIndexGem = [0, 1, 2, 8, 9, 10, 16, 17, 18];
     let indexGemsUnCheck = [8, 15, 16, 23, 24, 31, 32, 39, 40, 47, 48, 55];
     let indexStep = 5;
     let listGemsPriority = [];
-
     while (boardIndexGem[4] <= 55) {
         let indexBoard3x3 = boardIndexGem[4];
         if (!indexGemsUnCheck.includes(indexBoard3x3)) {
-            listGemsPriority.push(FindNumberGemTypeOfMatrix(boardIndexGem, gemTypes, indexBoard3x3));
+            listGemsPriority.push(findNumberGemTypeOfMatrix(boardIndexGem, gemTypes, indexBoard3x3));
         }
         for (let i = 0; i < boardIndexGem.length; i++) {
             if (boardIndexGem[0] < indexStep) {
@@ -904,7 +984,7 @@ function HandleCastSkillAirSpirit(gemTypes) {
     return list;
 }
 
-function FindNumberGemTypeOfMatrix(boardIndexGem, listGemType, indexBoard3x3) {
+function findNumberGemTypeOfMatrix(boardIndexGem, listGemType, indexBoard3x3) {
     let gemDetails = [];
     let totalReturn = 0;
     listGemType.forEach(gemType => {
@@ -926,3 +1006,119 @@ function FindNumberGemTypeOfMatrix(boardIndexGem, listGemType, indexBoard3x3) {
         gemDetails
     };
 }
+// function Test1() {
+//     let firstHeroAlive_enemyPlayer = enemyPlayer.firstHeroAlive();
+//     let firstHeroAlive_botPlayer = botPlayer.firstHeroAlive();
+
+//     let seaSpirit = botPlayer.getHeroById('SEA_SPIRIT');
+//     let airSpirit = botPlayer.getHeroById('AIR_SPIRIT');
+//     let fireSpirit = botPlayer.getHeroById('FIRE_SPIRIT');
+//     let enemyHerosAlive = enemyPlayer.getHerosAlive();
+//     let target = {
+//         targetId: null,
+//         selectedGem: null,
+//         gemIndex: null,
+//         isTargetAllyOrNot: null
+//     };
+//     if (!seaSpirit) {
+//         let swords = handleCastSkillAirSpirit([GemType.SWORD]);
+//         console.log("11swords:", swords);
+//         if (swords && swords.length > 0) {
+//             if (swords[0].quantity > 3) {
+//                 target.gemIndex = swords[0].index.toString();
+//                 target.isTargetAllyOrNot = true;
+//                 console.log("11airSpirit, target:", { airSpirit, target });
+//                 return;
+//             }
+//             if (swords[0].quantity > 2) {
+//                 target.gemIndex = swords[0].index.toString();
+//                 target.isTargetAllyOrNot = true;
+//                 console.log("22airSpirit, target:", { airSpirit, target });
+//                 return;
+//             }
+//         }
+//         if (fireSpirit) {
+//             let listChoiceFire = handleCastSkillAirSpirit([GemType.PURPLE, GemType.RED]);
+//             let listChoiceAir = handleCastSkillAirSpirit([GemType.BLUE, GemType.GREEN]);
+//             let indexCastSkill = listChoiceFire.find(x => x.quantity >= fireSpirit.getMaxManaCouldTake());
+//             console.log("11listChoiceFire/ do, tim:", listChoiceFire);
+//             console.log("11listChoiceAir/ xanh lam, xanh la:", listChoiceAir);
+//             console.log("11indexCastSkill/ phan tu 0:", indexCastSkill);
+
+//             if (indexCastSkill) {
+//                 target.gemIndex = indexCastSkill.index.toString();
+//                 target.isTargetAllyOrNot = true;
+//                 console.log("33airSpirit, target:", { airSpirit, target });
+//                 return;
+//             }
+//             if (listChoiceAir && listChoiceAir.length > 0 && listChoiceFire[0].quantity < listChoiceAir[0].quantity) {
+//                 target.gemIndex = listChoiceAir[0].index.toString();
+//                 target.isTargetAllyOrNot = true;
+//                 console.log("44airSpirit, target:", { airSpirit, target });
+//                 return;
+//             }
+//             let listChoiceAll = handleCastSkillAirSpirit([GemType.PURPLE, GemType.RED, GemType.BLUE, GemType.GREEN]);
+//             console.log("listChoiceAll/ tim, do, xanh la, xanh lam:", listChoiceAll);
+//             if (listChoiceAll && listChoiceAll.length > 0) {
+//                 target.gemIndex = listChoiceAll[0].index.toString();
+//                 target.isTargetAllyOrNot = true;
+//             }
+//             console.log("55airSpirit, target:", { airSpirit, target });
+//             return;
+//         }
+//     }
+//     if (seaSpirit) {
+//         let swords = handleCastSkillAirSpirit([GemType.SWORD]);
+//         console.log("22swords:", swords);
+//         if (swords && swords.length > 0) {
+//             if (swords[0].quantity > 3) {
+//                 target.gemIndex = swords[0].index.toString();
+//                 target.isTargetAllyOrNot = true;
+//                 console.log("66airSpirit, target:", { airSpirit, target });
+//                 return;
+//             }
+//             if (swords[0].quantity > 2 && firstHeroAlive_botPlayer.attack >= firstHeroAlive_enemyPlayer.hp) {
+//                 target.gemIndex = swords[0].index.toString();
+//                 target.isTargetAllyOrNot = true;
+//                 console.log("67airSpirit, target:", { airSpirit, target });
+//                 return;
+//             }
+//         }
+//         if (fireSpirit) {
+//             let listChoiceFire = handleCastSkillAirSpirit([GemType.RED, GemType.PURPLE]);
+//             let listChoiceAir = handleCastSkillAirSpirit([GemType.BLUE, GemType.GREEN]);
+//             let indexCastSkill = listChoiceFire.find(x => x.quantity >= fireSpirit.getMaxManaCouldTake());
+//             console.log("22listChoiceFire/ do, tim:", listChoiceFire);
+//             console.log("22listChoiceAir/ xanh lam, xanh la:", listChoiceAir);
+//             console.log("22indexCastSkill/ phan tu 0:", indexCastSkill);
+//             if (indexCastSkill) {
+//                 target.gemIndex = indexCastSkill.index.toString();
+//                 target.isTargetAllyOrNot = true;
+//                 console.log("77airSpirit, target:", { airSpirit, target });
+//                 return;
+//             }
+//             if (listChoiceAir && listChoiceAir.length > 0 && listChoiceFire[0].quantity < listChoiceAir[0].quantity) {
+//                 target.gemIndex = listChoiceAir[0].index.toString();
+//                 target.isTargetAllyOrNot = true;
+//                 console.log("88airSpirit, target:", { airSpirit, target });
+//                 return;
+//             }
+//             let listChoiceAll = handleCastSkillAirSpirit([GemType.RED, GemType.PURPLE, GemType.BLUE]);
+//             console.log("listChoiceAll/ tim, do, xanh lam:", listChoiceAll);
+//             if (listChoiceAll && listChoiceAll.length > 0) {
+//                 target.gemIndex = listChoiceAll[0].index.toString();
+//                 target.isTargetAllyOrNot = true;
+//             }
+//             console.log("99airSpirit, target:", { airSpirit, target });
+//             return;
+//         }
+//     }
+//     let listChoiceAir = handleCastSkillAirSpirit([GemType.BLUE, GemType.GREEN])
+//     console.log("Last/listChoiceAir/ xanh lam, xanh la:", listChoiceAir);
+//     if (listChoiceAir && listChoiceAir.length > 0) {
+//         target.gemIndex = listChoiceAir[0].index.toString();
+//         target.isTargetAllyOrNot = true;
+//         console.log("100airSpirit, target:", { airSpirit, target });
+//         return;
+//     }
+// }
