@@ -821,7 +821,7 @@ function GetListGemsPriority(priorityHero, isCheckFullMana = false) {
     let heroesAlive = botPlayer.getHerosAlive();
     if (isCheckFullMana) {
         heroesAlive = botPlayer.getHerosAliveAndUnFullMana();
-    };
+    }
     let listGemsPriority = [];
     if (heroesAlive && heroesAlive.length > 0) {
         heroesAlive.forEach(element => {
