@@ -35,7 +35,7 @@ var enemyPlayer;
 var currentPlayerId;
 var grid;
 
-const username = "54321";
+const username = "amen";
 const token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGkubGVraW0iLCJhdXRoIjoiUk9MRV9VU0VSIiwiTEFTVF9MT0dJTl9USU1FIjoxNjUzNjQ5NTcwMjYwLCJleHAiOjE2NTU0NDk1NzB9.zLNolld4z_vcitnWhr4_AOdt6nBJq37zSqYJaIF35nNKqYKzyEcdBt8u6w8yjuiLNyksvJpF2xOP_70cwulM2w";
 var visualizer = new Visualizer({ el: '#visual' });
 var params = window.params;
