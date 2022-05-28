@@ -745,6 +745,11 @@ function handleSwapGems() {
     if (matchGemSizeThanFour) {
         return matchGemSizeThanFour.getIndexSwapGem();
     }
+    if (!airSpirit && !fireSpirit && seaSpirit) {
+        let matchGemSword = listMatchGem.find(x => x.type == GemType.SWORD);
+        if (matchGemSword)
+            return matchGemSword.getIndexSwapGem();
+    }
     let matchGemSwordThanThree = listMatchGem.find(x => x.type == GemType.SWORD && x.sizeMatch > 3);
     if (matchGemSwordThanThree && firstHeroAlive_botPlayer.attack + 5 >= firstHeroAlive_enemyPlayer.hp) {
         return matchGemSwordThanThree.getIndexSwapGem();
